@@ -1,28 +1,28 @@
 #
 # Loaded by Loki's ruler (see loki-config.yaml: ruler.storage.local.directory).
-# Same two-group split as test-compass_prometheus_rules.yml, same label
-# scheme (test-compass_event_type / test-compass_trigger), pointed at the
+# Same two-group split as test_compass_prometheus_rules.yml, same label
+# scheme (test_compass_event_type / test_compass_trigger), pointed at the
 # SAME Alertmanager — so the Trigger dispatcher's webhook receiver sees one
 # consistent alert_fired stream no matter which engine fired it.
 #
-# 1. test-compass-log-recording-rules
+# 1. test_compass-log-recording-rules
 #    Metric-ified log signals —
 #    for Layer 2 anomaly checks that want a
 #    log-derived series, not just http_requests_total.
 #
-# 2. test-compass-log-alert-rules
+# 2. test_compass-log-alert-rules
 #    LogQL-only signals: things that show up as a specific line in the logs
 #    before (or instead of) tripping a metric threshold.
 #
 
 groups:
-  - name: test-compass-log-recording-rules
+  - name: test_compass-log-recording-rules
     interval: 30s
     rules:
       # Exception/traceback rate per service — complements
-      # test-compass:service:error_rate_5m, catches errors that don't
+      # test_compass:service:error_rate_5m, catches errors that don't
       # surface as 5xx (e.g. caught exceptions, background job failures)
-      - record: test-compass:service:log_exception_rate_5m
+      - record: test_compass:service:log_exception_rate_5m
         expr: |
           sum by (service) (
             count_over_time({job=~".+"} |= "Traceback" [5m])
@@ -30,7 +30,7 @@ groups:
 
       # Fatal/panic rate per service — process-level distress signal,
       # often precedes a CrashLoopBackOff by a few seconds
-      - record: test-compass:service:log_fatal_rate_5m
+      - record: test_compass:service:log_fatal_rate_5m
         expr: |
           sum by (service) (
             count_over_time({job=~".+"} |~ "(?i)fatal|panic" [5m])
@@ -39,36 +39,36 @@ groups:
       # rolling baseline inputs, same pattern as the Prometheus recording
       # rules — lets Layer 2 treat log-derived series the same way it
       # treats metric series
-      - record: test-compass:service:log_exception_rate_5m:avg_1h
-        expr: avg_over_time(test-compass:service:log_exception_rate_5m[1h])
-      - record: test-compass:service:log_exception_rate_5m:stddev_1h
-        expr: stddev_over_time(test-compass:service:log_exception_rate_5m[1h])
+      - record: test_compass:service:log_exception_rate_5m:avg_1h
+        expr: avg_over_time(test_compass:service:log_exception_rate_5m[1h])
+      - record: test_compass:service:log_exception_rate_5m:stddev_1h
+        expr: stddev_over_time(test_compass:service:log_exception_rate_5m[1h])
 
-  - name: test-compass-log-alert-rules
+  - name: test_compass-log-alert-rules
     rules:
       # Repeated exception pattern — a burst of tracebacks for one service.
       # This is context Prometheus counters alone won't give you: the
       # actual failure signature, not just a rate.
-      - alert: test-compassRepeatedExceptionPattern
-        expr: test-compass:service:log_exception_rate_5m > 10
+      - alert: test_compassRepeatedExceptionPattern
+        expr: test_compass:service:log_exception_rate_5m > 10
         for: 2m
         labels:
           severity: warning
-          test-compass_event_type: alert_fired
-          test-compass_trigger: log_exception_pattern
+          test_compass_event_type: alert_fired
+          test_compass_trigger: log_exception_pattern
         annotations:
           summary: 'Repeated exceptions in logs for {{ $labels.service }}'
           description: '{{ $labels.service }} logged {{ $value }} exception traces over 5m.'
 
       # Fatal/panic burst — often fires seconds before k8s notices via
       # CrashLoopBackOff, giving Layer 1 an earlier signal
-      - alert: test-compassFatalLogBurst
-        expr: test-compass:service:log_fatal_rate_5m > 3
+      - alert: test_compassFatalLogBurst
+        expr: test_compass:service:log_fatal_rate_5m > 3
         for: 1m
         labels:
           severity: critical
-          test-compass_event_type: alert_fired
-          test-compass_trigger: log_fatal_burst
+          test_compass_event_type: alert_fired
+          test_compass_trigger: log_fatal_burst
         annotations:
           summary: 'Fatal/panic log burst for {{ $labels.service }}'
           description: '{{ $labels.service }} logged {{ $value }} fatal/panic lines over 5m.'
@@ -77,7 +77,7 @@ groups:
       # kube_pod_container_status_last_terminated_reason=OOMKilled alert;
       # this one can catch memory pressure the app itself reports before
       # the kernel OOM-killer acts
-      - alert: test-compassOOMLogSignal
+      - alert: test_compassOOMLogSignal
         expr: |
           sum by (service) (
             count_over_time({job=~".+"} |~ "(?i)out of memory|oom" [5m])
@@ -85,8 +85,8 @@ groups:
         for: 1m
         labels:
           severity: critical
-          test-compass_event_type: alert_fired
-          test-compass_trigger: oom_log_signal
+          test_compass_event_type: alert_fired
+          test_compass_trigger: oom_log_signal
         annotations:
           summary: 'Out-of-memory signal in logs for {{ $labels.service }}'
           description: '{{ $labels.service }} logged OOM-related messages in the last 5m.'
@@ -94,7 +94,7 @@ groups:
       # Database/dependency connection errors — a class of failure that
       # rarely trips an HTTP error-rate threshold cleanly but shows up
       # unambiguously in logs
-      - alert: test-compassDependencyConnectionErrors
+      - alert: test_compassDependencyConnectionErrors
         expr: |
           sum by (service) (
             count_over_time({job=~".+"} |~ "(?i)connection refused|connection reset|could not connect" [5m])
@@ -102,27 +102,27 @@ groups:
         for: 2m
         labels:
           severity: warning
-          test-compass_event_type: alert_fired
-          test-compass_trigger: dependency_connection_errors
+          test_compass_event_type: alert_fired
+          test_compass_trigger: dependency_connection_errors
         annotations:
           summary: 'Dependency connection errors for {{ $labels.service }}'
           description: '{{ $labels.service }} logged {{ $value }} connection-error lines over 5m.'
 
       # --- Synthetic / test-only rule ---------------------------------
-      # Mirrors test-compassSyntheticStormTrigger in the Prometheus rules —
+      # Mirrors test_compassSyntheticStormTrigger in the Prometheus rules —
       # drive log lines containing this flag to load-test the alert-storm
       # handler's log-sourced path the same way the metric-sourced one is
       # tested.
-      - alert: test-compassSyntheticLogStormTrigger
+      - alert: test_compassSyntheticLogStormTrigger
         expr: |
           sum by (service) (
-            count_over_time({job=~".+"} |= "test-compass_test_storm_flag=1" [1m])
+            count_over_time({job=~".+"} |= "test_compass_test_storm_flag=1" [1m])
           ) > 0
         for: 0s
         labels:
           severity: warning
-          test-compass_event_type: alert_fired
-          test-compass_trigger: synthetic_storm_test
+          test_compass_event_type: alert_fired
+          test_compass_trigger: synthetic_storm_test
         annotations:
           summary: 'Synthetic log storm-test alert for {{ $labels.service }}'
-          description: 'Fired because a log line contained test-compass_test_storm_flag=1 — used to load-test the alert-storm handler.'
+          description: 'Fired because a log line contained test_compass_test_storm_flag=1 — used to load-test the alert-storm handler.'

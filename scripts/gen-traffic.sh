@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Endpoint to send GET request
-URL1="http://localhost:8080/ping/1/status"
-URL2="http://localhost:8080/ping/1/info"
+URL1="http://localhost:8000/ping/1/status"
+URL2="http://localhost:8000/ping/1/info"
 
 # Interval in seconds
 INTERVAL=2

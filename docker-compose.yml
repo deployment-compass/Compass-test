@@ -1,6 +1,7 @@
 services:
   prometheus:
     image: dhi.io/prometheus:3.13
+    user: '0:0'
     container_name: prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -15,11 +16,11 @@ services:
   loki:
     image: grafana/loki
     volumes:
-      - ./monitoring/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
-      - ./monitoring/loki/rules.yaml:/etc/loki/rules.yaml:ro
+      - ./monitoring/loki/loki-config.yml:/etc/loki/local-config.yml:ro
+      - ./monitoring/loki/rules.yml:/etc/loki/rules.yml:ro
 
       - loki-data:/loki
-    command: -config.file=/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yml
     restart: unless-stopped
     ports:
       - '3100:3100'
@@ -27,7 +28,7 @@ services:
   alertmanager:
     image: prom/alertmanager
     volumes:
-      - ./monitoring/alertmanager/alert-manager.yml:/etc/alertmanager/alert-manager.yml:ro
+      - ./monitoring/alertmanager.yml:/etc/alertmanager.yml:ro
     command:
       - --config.file=/etc/alertmanager/alertmanager.yml
     ports:
