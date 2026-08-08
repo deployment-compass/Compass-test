@@ -1,6 +1,5 @@
 # loki-config.yml — minimal single-node/filesystem config, fine for local
-# dev and training data collection. Swap the storage config for S3/GCS +
-# a real index (TSDB) before running this in production.
+# dev and training data collection.
 
 auth_enabled: false
 
