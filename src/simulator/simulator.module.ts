@@ -6,7 +6,8 @@ import { SimulatorConfigService } from './simulator-config.service';
 import { LoggerModule } from 'src/logger/logger.module';
 
 @Module({
-  controllers: [SimulatorController, LoggerModule],
+  imports: [LoggerModule],
+  controllers: [SimulatorController],
   providers: [SimulatorConfigService],
 })
 export class SimulatorModule {}

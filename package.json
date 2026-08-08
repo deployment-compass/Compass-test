@@ -75,7 +75,7 @@
     "testEnvironment": "node"
   },
   "allowScripts": {
-    "unrs-resolver@1.12.2": true,
-    "protobufjs@7.6.5": true
+    "protobufjs": true,
+    "unrs-resolver": true
   }
 }
