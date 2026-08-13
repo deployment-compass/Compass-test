@@ -1,0 +1,40 @@
+# This is the piece that was missing: it tells the Prometheus Operator
+# (installed by kube-prometheus-stack) WHICH Service to scrape, on WHICH
+# port, at WHICH path, and how often.
+#
+# Chain of discovery:
+#   Pod (labeled app=demo-app, container port 8080, /metrics)
+#     -> Service "demo-app" (selects pods by label app=demo-app,
+#        exposes a named port "http" -> targetPort 8080)
+#       -> ServiceMonitor "demo-app" (selects the Service by label
+#          app=demo-app, tells Prometheus Operator to scrape port "http"
+#          at path /metrics every 15s)
+#         -> Prometheus Operator watches ServiceMonitors and auto-generates
+#            the actual Prometheus scrape config -- you never hand-edit
+#            prometheus.yml.
+#
+# IMPORTANT: kube-prometheus-stack, by default, only picks up
+# ServiceMonitors labeled to match its own Helm release (this is what
+# `release: kube-prometheus` below is for). infra/scripts/install-monitoring.sh
+# sets serviceMonitorSelectorNilUsesHelmValues=false so Prometheus picks up
+# ANY ServiceMonitor in the cluster -- simpler for a demo, but in a real
+# multi-team cluster you'd want the label-based restriction instead.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: demo-app
+  namespace: default
+  labels:
+    app: demo-app
+    release: kube-prometheus
+spec:
+  selector:
+    matchLabels:
+      app: demo-app
+  namespaceSelector:
+    matchNames:
+      - default
+  endpoints:
+    - port: http          # must match the named port in the Service below
+      path: /metrics
+      interval: 15s

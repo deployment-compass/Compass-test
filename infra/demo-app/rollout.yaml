@@ -1,0 +1,77 @@
+# Demo application deployed via Argo Rollouts instead of a plain
+# Deployment, so we get native canary traffic splitting + pause/resume
+# hooks that compass' rollback executor drives.
+#
+# Image: built from ./app (this directory's Flask app) and loaded
+# directly into the kind cluster with:
+#   infra/scripts/build-demo-app.sh
+# kind clusters have no built-in registry, so `kind load docker-image`
+# is how a locally-built image becomes pullable by the cluster --
+# no Docker Hub / ECR / GCR account or cost required.
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: demo-app
+  labels:
+    app: demo-app
+spec:
+  replicas: 4
+  strategy:
+    canary:
+      steps:
+        - setWeight: 25
+        - pause: { duration: 60 }   # compass evaluates during this soak window
+        - setWeight: 50
+        - pause: { duration: 60 }
+        - setWeight: 100
+  selector:
+    matchLabels:
+      app: demo-app
+  template:
+    metadata:
+      labels:
+        app: demo-app
+    spec:
+      containers:
+        - name: demo-app
+          image: demo-app:local
+          imagePullPolicy: IfNotPresent   # use the image already loaded into kind, don't try to pull from a registry
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: APP_NAME
+              value: "demo-app"
+            - name: FAILURE_RATE
+              value: "0.0"    # bump to e.g. "0.3" and redeploy to simulate a bad release
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+# The Service is the stable network identity Prometheus (via the
+# ServiceMonitor) and the rest of the cluster use to reach the app --
+# pods come and go across rollouts, this endpoint doesn't.
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-app
+  labels:
+    app: demo-app
+spec:
+  selector:
+    app: demo-app
+  ports:
+    - name: http          # named port -- referenced by servicemonitor.yaml's `port: http`
+      port: 80
+      targetPort: 8080    # matches containerPort above
+  type: ClusterIP

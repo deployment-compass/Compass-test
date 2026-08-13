@@ -1,0 +1,35 @@
+name: Deploy & Trigger compass
+
+# Fires after a deployment step (adjust the workflow_run trigger to match
+# your actual deploy pipeline, or call this as a step within it directly).
+on:
+  workflow_dispatch:
+    inputs:
+      previous_revision:
+        description: "Previous stable revision/tag"
+        required: true
+  push:
+    branches: [main]
+
+jobs:
+  deploy-and-notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy (placeholder — replace with your actual deploy step)
+        run: echo "Deploying $(git rev-parse HEAD)..."
+
+      - name: Notify compass
+        run: |
+          curl -X POST "${{ secrets.compass_URL }}/deploy-hook" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "app_name": "demo-app",
+              "namespace": "default",
+              "new_revision": "${{ github.sha }}",
+              "previous_revision": "${{ github.event.inputs.previous_revision || 'unknown' }}",
+              "commit_sha": "${{ github.sha }}",
+              "commit_message": "${{ github.event.head_commit.message }}",
+              "triggered_by": "${{ github.actor }}"
+            }'

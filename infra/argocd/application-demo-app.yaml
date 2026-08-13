@@ -1,0 +1,30 @@
+# This is the object that actually makes Argo CD's "watch Git, keep
+# cluster in sync" behavior real for the demo app. Without this,
+# installing Argo CD does nothing by itself -- an Application object
+# is what tells it WHICH repo, WHICH path, and WHERE to apply it.
+#
+# Replace `repoURL` with your actual fork/repo URL once this is pushed
+# to your own GitHub. Argo CD polls this repo (default every 3 min, or
+# instantly via a webhook) and re-applies infra/demo-app/*.yaml any
+# time it changes on the `main` branch -- this is what "GitOps" means
+# in practice: merge a PR, the cluster updates itself.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/YOUR_USERNAME/compass.git   # <-- change this
+    targetRevision: main
+    path: infra/demo-app
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true       # removes resources deleted from Git
+      selfHeal: true     # reverts manual kubectl changes back to match Git
+    syncOptions:
+      - CreateNamespace=true
