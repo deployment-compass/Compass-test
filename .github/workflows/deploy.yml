@@ -29,27 +29,22 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and Push Images to ECR
+      - name: Build and Push Image to ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          # Build & Push Compass Core
-          docker build -t $ECR_REGISTRY/compass-core:$IMAGE_TAG -t $ECR_REGISTRY/compass-core:latest -f compass-core/Dockerfile compass-core/
+          # Build & Push NestJS Core App
+          docker build -t $ECR_REGISTRY/compass-core:$IMAGE_TAG -t $ECR_REGISTRY/compass-core:latest .
           docker push $ECR_REGISTRY/compass-core:$IMAGE_TAG
           docker push $ECR_REGISTRY/compass-core:latest
-
-          # Build & Push Demo App
-          docker build -t $ECR_REGISTRY/demo-app:$IMAGE_TAG -t $ECR_REGISTRY/demo-app:latest infra/demo-app/app/
-          docker push $ECR_REGISTRY/demo-app:$IMAGE_TAG
-          docker push $ECR_REGISTRY/demo-app:latest
 
       - name: Notify Compass
         run: |
           curl -X POST "${{ secrets.COMPASS_URL }}/deploy-hook" \
             -H "Content-Type: application/json" \
             -d '{
-              "app_name": "demo-app",
+              "app_name": "compass-core",
               "namespace": "compass-apps",
               "new_revision": "${{ github.sha }}",
               "previous_revision": "${{ github.event.inputs.previous_revision || 'unknown' }}",
