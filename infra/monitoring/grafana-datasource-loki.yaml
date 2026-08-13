@@ -1,0 +1,26 @@
+# Grafana (installed as part of kube-prometheus-stack) already knows
+# about Prometheus automatically -- the Helm chart wires that up for you.
+# It does NOT automatically know about Loki, since Loki was installed as
+# a separate Helm release. This ConfigMap fixes that.
+#
+# How it works: kube-prometheus-stack's Grafana runs a "sidecar" container
+# that watches for ConfigMaps labeled `grafana_datasource: "1"` in the
+# cluster and auto-loads them -- you never need to click through the
+# Grafana UI to add this by hand.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasource-loki
+  namespace: monitoring
+  labels:
+    grafana_datasource: "1"
+data:
+  loki-datasource.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki.monitoring.svc.cluster.local:3100
+        isDefault: false
+        editable: true

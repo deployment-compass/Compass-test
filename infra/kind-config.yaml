@@ -1,0 +1,11 @@
+# Local Kubernetes cluster config for kind (Kubernetes-in-Docker).
+# Single control-plane + one worker is enough to demo canary rollouts.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 8080
+        protocol: TCP
+  - role: worker

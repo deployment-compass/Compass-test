@@ -1,0 +1,26 @@
+# Same pattern as application-demo-app.yaml, but for compass itself
+# (infra/compass-core/). Note: this does NOT include the Secret --
+# secrets should never go through GitOps in plain text. Create
+# compass-core-secrets manually (see infra/compass-core/secret.example.yaml)
+# or, in a real production setup, use something like External Secrets
+# Operator to pull it from AWS Secrets Manager instead.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: compass-core
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/YOUR_USERNAME/compass.git   # <-- change this
+    targetRevision: main
+    path: infra/compass-core
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,59 @@
+name: Deploy & Trigger Compass
+
+on:
+  workflow_dispatch:
+    inputs:
+      previous_revision:
+        description: "Previous stable revision/tag"
+        required: true
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION: eu-north-1
+
+jobs:
+  deploy-and-notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push Images to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Build & Push Compass Core
+          docker build -t $ECR_REGISTRY/compass-core:$IMAGE_TAG -t $ECR_REGISTRY/compass-core:latest -f compass-core/Dockerfile compass-core/
+          docker push $ECR_REGISTRY/compass-core:$IMAGE_TAG
+          docker push $ECR_REGISTRY/compass-core:latest
+
+          # Build & Push Demo App
+          docker build -t $ECR_REGISTRY/demo-app:$IMAGE_TAG -t $ECR_REGISTRY/demo-app:latest compass/infra/demo-app/app/
+          docker push $ECR_REGISTRY/demo-app:$IMAGE_TAG
+          docker push $ECR_REGISTRY/demo-app:latest
+
+      - name: Notify Compass
+        run: |
+          curl -X POST "${{ secrets.COMPASS_URL }}/deploy-hook" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "app_name": "demo-app",
+              "namespace": "compass-apps",
+              "new_revision": "${{ github.sha }}",
+              "previous_revision": "${{ github.event.inputs.previous_revision || 'unknown' }}",
+              "commit_sha": "${{ github.sha }}",
+              "commit_message": "${{ github.event.head_commit.message }}",
+              "triggered_by": "${{ github.actor }}"
+            }'
