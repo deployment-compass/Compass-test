@@ -40,7 +40,7 @@ jobs:
           docker push $ECR_REGISTRY/compass-core:latest
 
           # Build & Push Demo App
-          docker build -t $ECR_REGISTRY/demo-app:$IMAGE_TAG -t $ECR_REGISTRY/demo-app:latest compass/infra/demo-app/app/
+          docker build -t $ECR_REGISTRY/demo-app:$IMAGE_TAG -t $ECR_REGISTRY/demo-app:latest infra/demo-app/app/
           docker push $ECR_REGISTRY/demo-app:$IMAGE_TAG
           docker push $ECR_REGISTRY/demo-app:latest
 
