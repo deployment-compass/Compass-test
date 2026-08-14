@@ -40,15 +40,27 @@ jobs:
           docker push $ECR_REGISTRY/compass-core:latest
 
       - name: Notify Compass
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
+          PAYLOAD=$(jq -n \
+            --arg app "compass-core" \
+            --arg ns "compass-apps" \
+            --arg new_rev "${{ github.sha }}" \
+            --arg prev_rev "${{ github.event.inputs.previous_revision || 'unknown' }}" \
+            --arg sha "${{ github.sha }}" \
+            --arg msg "$COMMIT_MSG" \
+            --arg actor "${{ github.actor }}" \
+            '{
+              app_name: $app,
+              namespace: $ns,
+              new_revision: $new_rev,
+              previous_revision: $prev_rev,
+              commit_sha: $sha,
+              commit_message: $msg,
+              triggered_by: $actor
+            }')
+
           curl -X POST "${{ secrets.COMPASS_URL }}/deploy-hook" \
             -H "Content-Type: application/json" \
-            -d '{
-              "app_name": "compass-core",
-              "namespace": "compass-apps",
-              "new_revision": "${{ github.sha }}",
-              "previous_revision": "${{ github.event.inputs.previous_revision || 'unknown' }}",
-              "commit_sha": "${{ github.sha }}",
-              "commit_message": "${{ github.event.head_commit.message }}",
-              "triggered_by": "${{ github.actor }}"
-            }'
+            -d "$PAYLOAD"
