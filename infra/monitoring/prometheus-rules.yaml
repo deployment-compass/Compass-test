@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=none
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: compass-alerts
+  namespace: monitoring
+spec:
+  groups:
+  - name: compass-core.rules
+    rules:
+    - alert: HighMemoryUsage
+      expr: (container_memory_usage_bytes{pod=~"compass-core-.*"} / container_spec_memory_limit_bytes) * 100 > 85
+      for: 2m
+      labels:
+        severity: critical
+        service: compass-core
+        action: GITOPS_HOTFIX
+      annotations:
+        summary: "Compass Core pod memory usage exceeds 85%"
+        description: "Pod {{ $labels.pod }} high memory consumption detected."
+
+    - alert: CanaryDeploymentFailing
+      expr: sum(rate(http_requests_total{status=~"5..", app="compass-core"}[2m])) > 5
+      for: 1m
+      labels:
+        severity: page
+        service: compass-core
+        action: CANARY_ABORT
+      annotations:
+        summary: "Canary release 5xx error threshold breached"
+        description: "High error rates observed on canary pods."
