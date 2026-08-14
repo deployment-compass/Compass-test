@@ -61,10 +61,9 @@ jobs:
               triggered_by: $actor
             }')
 
-          # Remove trailing slash from URL if present
-          CLEAN_URL=$(echo "$COMPASS_URL" | sed 's/*$//')
+          # Safely remove trailing slash using native Bash syntax
+          CLEAN_URL="${COMPASS_URL%/}"
 
-          # -g (--globoff) prevents curl from parsing URL braces/brackets
           curl -g -X POST "${CLEAN_URL}/deploy-hook" \
             -H "Content-Type: application/json" \
             -d "$PAYLOAD"

@@ -1,40 +1,23 @@
-# THIS is the piece that solves "GitHub Actions can't reach my laptop"
-# for real. When this is applied, the AWS Load Balancer Controller
-# (installed by infra/eks/setup-eks.sh) sees it and provisions an actual
-# AWS Application Load Balancer with a public internet-facing address.
-#
-# After `kubectl apply`, get the real address with:
-#   kubectl get ingress compass-core
-# Then point a real domain at it (a CNAME record in Route53 or wherever
-# your DNS lives) -- e.g. compass.yourcompany.com -- and put THAT in
-# your GitHub repo's compass_URL secret so .github/workflows/deploy.yml
-# can call it.
-#
-# TLS (the "https://" and the padlock) is handled by ACM (AWS Certificate
-# Manager) -- replace the certificate-arn below with your own once you've
-# requested a cert for your domain in ACM (free, just needs domain
-# ownership verification).
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: compass-core
-  namespace: default
+  namespace: compass-apps
   annotations:
     kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
-    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:ACCOUNT_ID:certificate/REPLACE_ME"
-    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/healthcheck-path: / # <-- Updated to /
+    alb.ingress.kubernetes.io/healthcheck-success-codes: '200,204' # Accepts 200 or 204
 spec:
   rules:
-    - host: compass.yourcompany.com   # <-- replace with your real domain
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: compass-core
-                port:
-                  number: 8000
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: compass-core
+            port:
+              number: 8000
