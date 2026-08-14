@@ -34,13 +34,13 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          # Build & Push NestJS Core App
           docker build -t $ECR_REGISTRY/compass-core:$IMAGE_TAG -t $ECR_REGISTRY/compass-core:latest .
           docker push $ECR_REGISTRY/compass-core:$IMAGE_TAG
           docker push $ECR_REGISTRY/compass-core:latest
 
       - name: Notify Compass
         env:
+          COMPASS_URL: ${{ secrets.COMPASS_URL }}
           COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
           PAYLOAD=$(jq -n \
@@ -61,6 +61,10 @@ jobs:
               triggered_by: $actor
             }')
 
-          curl -X POST "${{ secrets.COMPASS_URL }}/deploy-hook" \
+          # Remove trailing slash from URL if present
+          CLEAN_URL=$(echo "$COMPASS_URL" | sed 's/*$//')
+
+          # -g (--globoff) prevents curl from parsing URL braces/brackets
+          curl -g -X POST "${CLEAN_URL}/deploy-hook" \
             -H "Content-Type: application/json" \
             -d "$PAYLOAD"
