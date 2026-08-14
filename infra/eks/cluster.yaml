@@ -13,21 +13,21 @@ kind: ClusterConfig
 
 metadata:
   name: compass-prod
-  region: us-east-1
+  region: eu-north-1
   version: "1.30"
 
 # Small, cheap node group to start. t3.medium is enough to run the demo
 # app, compass, Prometheus/Grafana/Loki, and Argo CD/Rollouts together.
 # Scale up nodeGroups or add a second one once you have real traffic.
 nodeGroups:
-  - name: compass-workers
-    instanceType: t3.medium
-    desiredCapacity: 2
-    minSize: 2
-    maxSize: 4
-    volumeSize: 20
-    ssh:
-      allow: false   # no SSH access needed; manage via kubectl instead
+- name: compass-workers
+  instanceType: t3.medium
+  desiredCapacity: 2
+  minSize: 2
+  maxSize: 4
+  volumeSize: 20
+  ssh:
+    allow: false # no SSH access needed; manage via kubectl instead
 
 # Required so pods (like compass and the AWS Load Balancer Controller)
 # can call AWS APIs (e.g. to create the actual Application Load Balancer
