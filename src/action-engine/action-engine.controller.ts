@@ -1,6 +1,13 @@
-﻿import { Controller, Post, Body, HttpCode, HttpStatus, Logger } from '@nestjs/common';
+﻿import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
 import { ActionEngineService } from './action-engine.service';
-import { AlertmanagerPayloadDto } from './dto/alertmanager-webhook.dto';
+import { type AlertmanagerPayloadDto } from './dto/alertmanager-webhook.dto';
 
 @Controller('api/v1/action-engine')
 export class ActionEngineController {

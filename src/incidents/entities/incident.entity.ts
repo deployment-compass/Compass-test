@@ -1,4 +1,9 @@
-﻿import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+﻿import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+} from 'typeorm';
 
 export enum IncidentStatus {
   PENDING = 'PENDING',
@@ -19,7 +24,11 @@ export class Incident {
   @Column('jsonb', { nullable: true })
   rawMetrics: object;
 
-  @Column({ type: 'enum', enum: IncidentStatus, default: IncidentStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: IncidentStatus,
+    default: IncidentStatus.PENDING,
+  })
   status: IncidentStatus;
 
   @Column({ nullable: true })
