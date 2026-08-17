@@ -92,43 +92,6 @@ groups:
         expr: |
           rate(node_disk_read_bytes_total[5m]) + rate(node_disk_written_bytes_total[5m])
 
-      # --- Network delay / loss ------------------------------------------
-      # Requires blackbox_exporter ICMP module scraping your services/nodes
-      - record: test_compass:target:ping_delay_seconds
-        expr: probe_duration_seconds{job="blackbox-icmp"}
-
-      # Packet loss ratio from blackbox_exporter's ICMP module (0-1);
-      # if you're not running blackbox_exporter's loss-capable config,
-      # fall back to node_exporter's interface error/drop counters below
-      - record: test_compass:target:ping_loss_ratio
-        expr: 1 - probe_success{job="blackbox-icmp"}
-
-      # NIC-level packet loss proxy (dropped / total) per node interface
-      - record: test_compass:node:network_drop_ratio
-        expr: |
-          (rate(node_network_receive_drop_total[5m]) + rate(node_network_transmit_drop_total[5m]))
-          /
-          clamp_min(
-            rate(node_network_receive_packets_total[5m]) + rate(node_network_transmit_packets_total[5m]),
-            1
-          )
-
-      # --- Sockets ---------------------------------------------------------
-      # Total open sockets (all TCP states) per node — from node_exporter's
-      # sockstat collector
-      - record: test_compass:node:sockets_used
-        expr: node_sockstat_TCP_alloc
-
-      # TCP connections stuck in TIME_WAIT — early signal of connection
-      # churn/exhaustion under load
-      - record: test_compass:node:tcp_time_wait
-        expr: node_sockstat_TCP_tw
-
-      # Socket/file-descriptor headroom — used vs. max allowed
-      - record: test_compass:node:socket_utilization
-        expr: |
-          node_sockstat_TCP_alloc / node_sockstat_sockets_used
-
   # ---------------------------------------------------------------------
   # 2. Alerting rules — Alertmanager firing events become `alert_fired`
   # ---------------------------------------------------------------------
@@ -234,39 +197,6 @@ groups:
         annotations:
           summary: 'Disk filling up on {{ $labels.instance }} ({{ $labels.mountpoint }})'
           description: '{{ $labels.mountpoint }} on {{ $labels.instance }} is {{ $value | humanizePercentage }} full.'
-
-      - alert: testCompassHighPingDelay
-        expr: test_compass:target:ping_delay_seconds > 0.2
-        for: 3m
-        labels:
-          severity: warning
-          test_compass_event_type: alert_fired
-          test_compass_trigger: network_delay
-        annotations:
-          summary: 'High network delay to {{ $labels.instance }}'
-          description: 'Ping delay to {{ $labels.instance }} is {{ $value }}s (threshold 0.2s) for 3m.'
-
-      - alert: testCompassHighPacketLoss
-        expr: test_compass:target:ping_loss_ratio > 0.02
-        for: 3m
-        labels:
-          severity: critical
-          test_compass_event_type: alert_fired
-          test_compass_trigger: packet_loss
-        annotations:
-          summary: 'Packet loss to {{ $labels.instance }}'
-          description: 'Loss ratio to {{ $labels.instance }} is {{ $value | humanizePercentage }} for 3m.'
-
-      - alert: testCompassSocketExhaustionRisk
-        expr: test_compass:node:tcp_time_wait > 20000
-        for: 5m
-        labels:
-          severity: warning
-          test_compass_event_type: alert_fired
-          test_compass_trigger: socket_exhaustion
-        annotations:
-          summary: 'High TIME_WAIT count on {{ $labels.instance }}'
-          description: '{{ $labels.instance }} has {{ $value }} TCP sockets in TIME_WAIT for 5m — possible connection churn/leak.'
 
       # --- Synthetic / test-only rules -----------------------------------
       - alert: testCompassSyntheticStormTrigger
