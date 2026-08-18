@@ -33,11 +33,32 @@ services:
       - --config.file=/etc/alertmanager/alertmanager.yml
     ports:
       - '9093:9093'
+
   server:
     build:
       context: .
     ports:
+      - '3000:3000'
+
+  compass:
+    image: omarmohamed04/compass-app:v1.0
+
+    ports:
       - '8000:8000'
+    depends_on:
+      - redis
+      - rabbitmq
+
+  redis:
+    image: dhi.io/redis:8-debian-dev
+    ports:
+      - '6379:6379'
+
+  rabbitmq:
+    image: dhi.io/rabbitmq:4-debian-dev
+    ports:
+      - '5672:5672'
+      - '15672:15672'
 
 volumes:
   prom_data:

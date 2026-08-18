@@ -106,13 +106,13 @@ Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 Assuming the NestJS simulator is running locally:
 
 ```text
-http://localhost:8000
+http://localhost:3000
 ```
 
 open the next url for swagger doc
 
 ```text
-http://localhost:8000/api
+http://localhost:3000/api
 ```
 
 Replace the base URL with the host/port of your deployed simulator when needed.
@@ -132,7 +132,7 @@ GET /config
 ### Example
 
 ```bash
-curl http://localhost:8000/config
+curl http://localhost:3000/config
 ```
 
 ### Response
@@ -188,7 +188,7 @@ Content-Type: application/json
 ### Example
 
 ```bash
-curl -X PUT http://localhost:8000/config \
+curl -X PUT http://localhost:3000/config \
   -H "Content-Type: application/json" \
   -d '{
     "success_chance": 100,
@@ -207,7 +207,7 @@ curl -X PUT http://localhost:8000/config \
 To intentionally make all requests fail:
 
 ```bash
-curl -X PUT http://localhost:8000/config \
+curl -X PUT http://localhost:3000/config \
   -H "Content-Type: application/json" \
   -d '{
     "success_chance": 0
@@ -244,7 +244,7 @@ GET /ping/:id/status
 ### Example
 
 ```bash
-curl http://localhost:8000/ping/123/status
+curl http://localhost:3000/ping/123/status
 ```
 
 ### Response
@@ -284,7 +284,7 @@ GET /ping/:id/info
 ### Example
 
 ```bash
-curl http://localhost:8000/ping/123/info
+curl http://localhost:3000/ping/123/info
 ```
 
 ---
@@ -312,7 +312,7 @@ Controls the probability of receiving a successful HTTP response.
 #### Force a failure
 
 ```bash
-curl "http://localhost:8000/ping/1/status?success_chance=0"
+curl "http://localhost:3000/ping/1/status?success_chance=0"
 ```
 
 This forces the request to return a failure status.
@@ -320,7 +320,7 @@ This forces the request to return a failure status.
 #### Force a successful response
 
 ```bash
-curl "http://localhost:8000/ping/1/status?success_chance=100"
+curl "http://localhost:3000/ping/1/status?success_chance=100"
 ```
 
 ---
@@ -332,13 +332,13 @@ Controls whether the request uses the fast latency range.
 #### Force the fast path
 
 ```bash
-curl "http://localhost:8000/ping/1/status?fast_chance=100"
+curl "http://localhost:3000/ping/1/status?fast_chance=100"
 ```
 
 #### Disable the fast path
 
 ```bash
-curl "http://localhost:8000/ping/1/status?fast_chance=0"
+curl "http://localhost:3000/ping/1/status?fast_chance=0"
 ```
 
 ---
@@ -362,7 +362,7 @@ fast_duration_ms + 1ms → 1000ms
 #### Example
 
 ```bash
-curl "http://localhost:8000/ping/1/status?fast_chance=100&fast_duration_ms=500"
+curl "http://localhost:3000/ping/1/status?fast_chance=100&fast_duration_ms=500"
 ```
 
 This produces a random latency between approximately:
@@ -422,7 +422,7 @@ For normal usage, use percentages such as:
 Force exception log generation for one request:
 
 ```bash
-curl "http://localhost:8000/ping/1/status?exception_chance=100"
+curl "http://localhost:3000/ping/1/status?exception_chance=100"
 ```
 
 The shared configuration is not changed.
@@ -432,7 +432,7 @@ The shared configuration is not changed.
 ## 8. Trigger a Fatal Log
 
 ```bash
-curl "http://localhost:8000/ping/1/status?fatal_chance=100"
+curl "http://localhost:3000/ping/1/status?fatal_chance=100"
 ```
 
 This forces the fatal log pattern for that request.
@@ -442,7 +442,7 @@ This forces the fatal log pattern for that request.
 ## 9. Trigger an OOM Log
 
 ```bash
-curl "http://localhost:8000/ping/1/status?oom_chance=100"
+curl "http://localhost:3000/ping/1/status?oom_chance=100"
 ```
 
 This forces the OOM-related log pattern for that request.
@@ -452,7 +452,7 @@ This forces the OOM-related log pattern for that request.
 ## 10. Trigger a Connection Error Log
 
 ```bash
-curl "http://localhost:8000/ping/1/status?conn_error_chance=100"
+curl "http://localhost:3000/ping/1/status?conn_error_chance=100"
 ```
 
 This forces the connection-error log pattern for that request.
@@ -462,13 +462,13 @@ This forces the connection-error log pattern for that request.
 ## 11. Trigger Storm Behavior
 
 ```bash
-curl "http://localhost:8000/ping/1/status?storm_flag=true"
+curl "http://localhost:3000/ping/1/status?storm_flag=true"
 ```
 
 You can also use:
 
 ```bash
-curl "http://localhost:8000/ping/1/status?storm_flag=1"
+curl "http://localhost:3000/ping/1/status?storm_flag=1"
 ```
 
 The accepted boolean forms depend on the implementation of `parseBoolOrNull`.
@@ -503,20 +503,20 @@ storm_flag
 
 ```bash
 # Force HTTP failures
-curl "http://localhost:8000/ping/1/status?success_chance=0"
+curl "http://localhost:3000/ping/1/status?success_chance=0"
 
 # Force exception logs
-curl "http://localhost:8000/ping/1/status?exception_chance=100"
+curl "http://localhost:3000/ping/1/status?exception_chance=100"
 
 # Force OOM logs
-curl "http://localhost:8000/ping/1/status?oom_chance=100"
+curl "http://localhost:3000/ping/1/status?oom_chance=100"
 
 # Force connection-error logs
-curl "http://localhost:8000/ping/1/status?conn_error_chance=100"
+curl "http://localhost:3000/ping/1/status?conn_error_chance=100"
 
 # Successful HTTP response + exception log
-curl "http://localhost:8000/ping/1/status?success_chance=100&exception_chance=100"
+curl "http://localhost:3000/ping/1/status?success_chance=100&exception_chance=100"
 
 # Force slow path
-curl "http://localhost:8000/ping/1/status?fast_chance=0"
+curl "http://localhost:3000/ping/1/status?fast_chance=0"
 ```
