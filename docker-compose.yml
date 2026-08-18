@@ -18,13 +18,22 @@ services:
     volumes:
       - ./monitoring/loki/loki-config.yml:/etc/loki/local-config.yml:ro
       - ./monitoring/loki/rules.yml:/etc/loki/rules.yml:ro
-
       - loki-data:/loki
     command: -config.file=/etc/loki/local-config.yml
     restart: unless-stopped
     ports:
       - '3100:3100'
 
+  server:
+    build:
+      context: .
+    environment:
+      SERVICE_NAME: compass
+      LOKI_URL: http://loki:3100
+    depends_on:
+      - loki
+    ports:
+      - '3000:3000'
   alertmanager:
     image: prom/alertmanager
     volumes:
@@ -34,20 +43,45 @@ services:
     ports:
       - '9093:9093'
 
-  server:
-    build:
-      context: .
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
     ports:
-      - '3000:3000'
+      - '8080:8080'
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    devices:
+      - /dev/kmsg
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - '9100:9100'
+
 
   compass:
-    image: omarmohamed04/compass-app:v1.0
-
-    ports:
-      - '8000:8000'
-    depends_on:
-      - redis
-      - rabbitmq
+      build:
+        context: ./compass/.
+      environment:
+        COMPASS_PROMETHEUS_URL: http://prometheus:9090
+        COMPASS_LOKI_URL: http://loki:3100
+        COMPASS_REDIS_URL: redis://redis:6379/0
+        COMPASS_RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      ports:
+        - '8000:8000'
+      depends_on:
+        - redis
+        - rabbitmq
+      develop:
+        watch:
+          - action: rebuild
+            path: ./compass
 
   redis:
     image: dhi.io/redis:8-debian-dev
