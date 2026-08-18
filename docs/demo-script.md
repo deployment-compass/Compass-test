@@ -24,12 +24,12 @@ kubectl port-forward svc/demo-app 8080:80
 cd ../../core
 cp .env.example .env   # paste in your real ANTHROPIC_API_KEY
 pip install -r requirements.txt
-uvicorn app.main:app --port 8000
+uvicorn app.main:app --port 3000
 ```
 
 Open two browser tabs ahead of time:
 - Grafana: `http://localhost:3000` (admin/admin) → the "compass — demo-app" dashboard
-- A terminal with `watch -n2 curl -s http://localhost:8000/incidents` running, so incidents appear live
+- A terminal with `watch -n2 curl -s http://localhost:3000/incidents` running, so incidents appear live
 
 ## The live sequence (on stage)
 
@@ -62,7 +62,7 @@ Error rate panel climbs in near-real-time.
 
 **[1:35] Trigger the compass check (10 sec)**
 ```bash
-curl -X POST http://localhost:8000/deploy-hook \
+curl -X POST http://localhost:3000/deploy-hook \
   -H "Content-Type: application/json" \
   -d '{
     "app_name": "demo-app", "namespace": "default",
@@ -80,7 +80,7 @@ Read the JSON response out loud, pointing at the key fields:
 
 **[2:15] Show the incident report (20 sec)**
 ```bash
-curl -s http://localhost:8000/incidents | python3 -m json.tool
+curl -s http://localhost:3000/incidents | python3 -m json.tool
 ```
 > "And here's the auto-generated incident report — this is what used
 > to take an engineer 30-45 minutes to reconstruct after the fact.
@@ -111,7 +111,7 @@ Have this ready as backup, tested beforehand:
 - A screen recording of the sequence above, in case Wi-Fi or a
   port-forward flakes. Judges respect "here's the backup recording"
   far more than a dead terminal eating your time slot.
-- `curl http://localhost:8000/health` as your first command if anything
+- `curl http://localhost:3000/health` as your first command if anything
   seems off — confirms compass itself is alive before debugging further.
 
 ## What NOT to demo live

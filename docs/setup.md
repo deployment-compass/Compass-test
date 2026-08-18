@@ -106,9 +106,9 @@ cd core
 cp .env.example .env
 # edit .env and paste in your ANTHROPIC_API_KEY
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 3000
 ```
-Check it's alive: `curl http://localhost:8000/health`
+Check it's alive: `curl http://localhost:3000/health`
 
 It reaches the cluster via your local `kubeconfig` and the port-forwards
 from step 5. This is the right mode while you're actively iterating on
@@ -116,7 +116,7 @@ from step 5. This is the right mode while you're actively iterating on
 
 **Mode B — running inside the cluster** (`infra/compass-core/`).
 Gives compass a stable in-cluster address —
-`http://compass-core.default.svc.cluster.local:8000` — that other
+`http://compass-core.default.svc.cluster.local:3000` — that other
 in-cluster things (an Argo CD PostSync hook, for example) can call
 directly, and uses the in-cluster ServiceAccount instead of your local
 kubeconfig:
@@ -135,7 +135,7 @@ not reachable from the public internet. If you deploy compass in Mode B
 and want `.github/workflows/deploy.yml` (which runs on GitHub's own
 servers, outside your machine) to reach it, you have three honest
 options:
-1. **Demo/dev only:** run a free tunnel like `ngrok http 8000` (Mode A) or
+1. **Demo/dev only:** run a free tunnel like `ngrok http 3000` (Mode A) or
    port-forward `svc/compass-core` (Mode B) and put the temporary public
    URL in the `compass_URL` GitHub secret. Fine for demos, not durable.
 2. **Trigger from inside the cluster instead of from GitHub Actions** —
@@ -153,7 +153,7 @@ is all you need.
 ## 7. Trigger a deploy event manually (simulating what CI would send)
 
 ```bash
-curl -X POST http://localhost:8000/deploy-hook \
+curl -X POST http://localhost:3000/deploy-hook \
   -H "Content-Type: application/json" \
   -d '{
     "app_name": "demo-app",
@@ -182,7 +182,7 @@ kubectl get pods -w                          # see the crash loop / unready pods
 ## 9. View incident history
 
 ```bash
-curl http://localhost:8000/incidents
+curl http://localhost:3000/incidents
 ```
 
 ## 10. Run the tests

@@ -1,0 +1,15 @@
+route:
+  receiver: compass-webhook
+  group_by: ['service', 'test_compass_trigger']
+  group_wait: 10s
+  group_interval: 30s
+  repeat_interval: 3h
+
+receivers:
+  - name: compass-webhook
+    webhook_configs:
+      # Single endpoint, already spec'd in app/api/webhooks.py as the
+      # Alertmanager receiver. Prometheus and Loki both post here — the
+      # payload shape is identical, so Compass's normalizer doesn't branch.
+      - url: http://compass:8000/webhooks/alertmanager
+        send_resolved: true

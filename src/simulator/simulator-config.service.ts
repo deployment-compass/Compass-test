@@ -1,6 +1,6 @@
 // src/simulator/simulator-config.service.ts
 //
-// Equivalent of the Go ConfigStore — a single injectable, in-memory
+// in-memory
 // source of truth for default response-simulation behavior, mutable at
 // runtime via GET/PUT /config.
 
