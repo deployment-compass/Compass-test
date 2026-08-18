@@ -8,3 +8,4 @@ Dockerfile
 npm-debug.log
 scripts
 monitoring
+compass 

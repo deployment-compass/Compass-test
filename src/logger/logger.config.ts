@@ -12,10 +12,10 @@ import { WinstonModule, utilities as nestWinstonUtils } from 'nest-winston';
 import LokiTransport from 'winston-loki';
 import * as winston from 'winston';
 
-const SERVICE_NAME = process.env.COMPASS_SERVICE_NAME ?? 'compass';
+const SERVICE_NAME = process.env.SERVICE_NAME ?? 'compass';
 const LOKI_URL = process.env.LOKI_URL ?? 'http://loki:3100';
 
-export const loggerConfig = WinstonModule.createLogger({
+export const winstonOptions: winston.LoggerOptions = {
   transports: [
     // Console output — human-readable in dev, still JSON in prod
     new winston.transports.Console({
@@ -37,7 +37,7 @@ export const loggerConfig = WinstonModule.createLogger({
     // index with a stream per incident.
     new LokiTransport({
       host: LOKI_URL,
-      labels: { service: SERVICE_NAME, env: 'development' },
+      labels: { service: SERVICE_NAME, env: 'prod' },
       json: true,
       format: winston.format.json(),
       replaceTimestamp: true,
@@ -46,4 +46,11 @@ export const loggerConfig = WinstonModule.createLogger({
       interval: 5, // seconds — batch flush interval
     }),
   ],
-});
+};
+
+
+// For NestFactory.create(AppModule, { logger: ... }) — Nest-shaped wrapper
+export const loggerConfig = WinstonModule.createLogger(winstonOptions);
+
+// For DI injection via WINSTON_MODULE_PROVIDER — raw winston instance
+export const winstonInstance = winston.createLogger(winstonOptions);

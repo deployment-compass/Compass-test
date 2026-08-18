@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
-import { loggerConfig } from './logger.config';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { winstonInstance } from './logger.config';
 
 @Module({
   providers: [
     {
-      provide: 'winston',
-      useValue: loggerConfig,
+      provide: WINSTON_MODULE_PROVIDER,
+      useValue: winstonInstance,
     },
   ],
-  exports: ['winston'],
+  exports: [WINSTON_MODULE_PROVIDER],
 })
 export class LoggerModule {}

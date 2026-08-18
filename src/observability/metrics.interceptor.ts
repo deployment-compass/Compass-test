@@ -15,7 +15,7 @@ import { tap } from 'rxjs/operators';
 import { MetricsService } from './metrics.service';
 import { Request, Response } from 'express';
 
-const SERVICE_NAME = process.env.COMPASS_SERVICE_NAME ?? 'compass';
+const SERVICE_NAME = process.env.SERVICE_NAME ?? 'compass';
 
 @Injectable()
 export class MetricsInterceptor implements NestInterceptor {
