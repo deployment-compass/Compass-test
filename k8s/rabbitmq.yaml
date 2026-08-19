@@ -15,11 +15,9 @@ spec:
       labels:
         app: rabbitmq
     spec:
-      imagePullSecrets:
-        - name: dhi-registry-secret
       containers:
         - name: rabbitmq
-          image: dhi.io/rabbitmq:4-debian-dev
+          image: rabbitmq:3-management
           env:
             - name: RABBITMQ_DEFAULT_USER
               value: guest

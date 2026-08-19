@@ -15,11 +15,9 @@ spec:
       labels:
         app: redis
     spec:
-      imagePullSecrets:
-        - name: dhi-registry-secret
       containers:
         - name: redis
-          image: dhi.io/redis:8-debian-dev
+          image: redis:7
           ports:
             - containerPort: 6379
 ---

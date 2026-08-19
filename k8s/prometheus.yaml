@@ -5,6 +5,7 @@ metadata:
   namespace: compass
 spec:
   accessModes: ["ReadWriteOnce"]
+  storageClassName: gp2
   resources:
     requests:
       storage: 10Gi
@@ -26,15 +27,13 @@ spec:
       labels:
         app: prometheus
     spec:
-      imagePullSecrets:
-        - name: dhi-registry-secret
       serviceAccountName: prometheus
       securityContext:
         runAsUser: 0
         runAsGroup: 0
       containers:
         - name: prometheus
-          image: dhi.io/prometheus:3.13
+          image: prom/prometheus:v3.13.0
           args:
             - --config.file=/etc/prometheus/prometheus.yml
           ports:

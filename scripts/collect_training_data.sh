@@ -6,7 +6,7 @@ set -euo pipefail
 DURATION_SECONDS=300
 INTERVAL_SECONDS=10
 OUTPUT_FILE="training_data.jsonl"
-API_URL="http://localhost:8000/training/collect"
+API_URL="http://compass:8000/training/collect"
 
 usage() {
     echo "Usage: $0 [options]"

@@ -5,6 +5,7 @@ metadata:
   namespace: compass
 spec:
   accessModes: ["ReadWriteOnce"]
+  storageClassName: gp2
   resources:
     requests:
       storage: 10Gi
@@ -26,6 +27,10 @@ spec:
       labels:
         app: loki
     spec:
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+
       containers:
         - name: loki
           image: grafana/loki

@@ -1,0 +1,211 @@
+# test-compass_prometheus_rules.yml
+#
+# Two groups, mapped directly onto the test-compass architecture:
+#
+# 1. test-compass-recording-rules
+#     they're pulled on demand
+#
+# 2. test-compass-alert-rules
+#    These fire via Alertmanager -> webhook -> Trigger
+#
+
+groups:
+  - name: test-compass-recording-rules
+    interval: 30s
+    rules:
+      # p95 latency per service — matches metric_name: "p95_latency" in 9.3
+      - record: test_compass:service:p95_latency_seconds
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (service, le)
+          )
+
+      # error rate per service (5xx / total) — feeds Layer 2 anomaly checks
+      - record: test_compass:service:error_rate_5m
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+          /
+          sum(rate(http_requests_total[5m])) by (service)
+
+      # memory trend — slope over 10m, used as the "memory trend" input
+      - record: test_compass:service:memory_trend_10m
+        expr: |
+          deriv(
+            sum(container_memory_working_set_bytes{container!=""}) by (service)[10m:1m]
+          )
+
+      # rolling baseline mean/stddev inputs
+      - record: test_compass:service:p95_latency_seconds:avg_1h
+        expr: avg_over_time(test_compass:service:p95_latency_seconds[1h])
+      - record: test_compass:service:p95_latency_seconds:stddev_1h
+        expr: stddev_over_time(test_compass:service:p95_latency_seconds[1h])
+      - record: test_compass:service:error_rate_5m:avg_1h
+        expr: avg_over_time(test_compass:service:error_rate_5m[1h])
+      - record: test_compass:service:error_rate_5m:stddev_1h
+        expr: stddev_over_time(test_compass:service:error_rate_5m[1h])
+
+  # ---------------------------------------------------------------------
+  #  Infra-level recording rules — CPU, memory, disk, network delay/loss,
+  #    socket usage.
+  - name: test-compass-infra-recording-rules
+    interval: 30s
+    rules:
+      # --- CPU ---------------------------------------------------------
+      # Per-node CPU utilization (1 - idle), averaged across cores
+      - record: test_compass:node:cpu_utilization
+        expr: |
+          1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))
+
+      # Per-service CPU usage (container-level, for workloads on k8s)
+      - record: test_compass:service:cpu_usage_cores
+        expr: |
+          sum(rate(container_cpu_usage_seconds_total{container!=""}[5m])) by (service)
+
+      # --- Memory --------------------------------------------------------
+      # Node-level memory utilization (used / total)
+      - record: test_compass:node:memory_utilization
+        expr: |
+          1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)
+
+      # Container-level memory usage in absolute bytes (baseline input,
+      # complements test_compass:service:memory_trend_10m above)
+      - record: test_compass:service:memory_usage_bytes
+        expr: |
+          sum(container_memory_working_set_bytes{container!=""}) by (service)
+
+      # --- Disk ----------------------------------------------------------
+      # Filesystem utilization per node/mountpoint
+      - record: test_compass:node:disk_utilization
+        expr: |
+          1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"}
+               / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"})
+
+      # Disk I/O latency proxy — average time per operation
+      - record: test_compass:node:disk_io_time_seconds_5m
+        expr: |
+          rate(node_disk_io_time_seconds_total[5m])
+
+      # Disk throughput (read+write bytes/sec) — useful for spotting
+      # I/O-bound root causes the app-level metrics won't show
+      - record: test_compass:node:disk_throughput_bytes_5m
+        expr: |
+          rate(node_disk_read_bytes_total[5m]) + rate(node_disk_written_bytes_total[5m])
+
+  # ---------------------------------------------------------------------
+  # 2. Alerting rules — Alertmanager firing events become `alert_fired`
+  # ---------------------------------------------------------------------
+  - name: test-compass-alert-rules
+    rules:
+      - alert: testCompassHighP95Latency
+        expr: test_compass:service:p95_latency_seconds > 1.5
+        for: 2m
+        labels:
+          severity: warning
+          test_compass_event_type: alert_fired
+          test_compass_trigger: high_latency
+        annotations:
+          summary: 'p95 latency high for {{ $labels.service }}'
+          description: '{{ $labels.service }} p95 latency is {{ $value }}s (threshold 1.5s) for 2m.'
+
+      - alert: testCompassHighErrorRate
+        expr: test_compass:service:error_rate_5m > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          test_compass_event_type: alert_fired
+          test_compass_trigger: high_error_rate
+        annotations:
+          summary: 'Error rate high for {{ $labels.service }}'
+          description: '{{ $labels.service }} 5xx rate is {{ $value | humanizePercentage }} over 5m (threshold 5%).'
+
+      - alert: testCompassMemoryTrendRising
+        expr: test_compass:service:memory_trend_10m > 0
+        for: 10m
+        labels:
+          severity: warning
+          test_compass_event_type: alert_fired
+          test_compass_trigger: memory_trend
+        annotations:
+          summary: 'Sustained memory growth for {{ $labels.service }}'
+          description: '{{ $labels.service }} working-set memory has been trending upward for 10m — possible leak.'
+
+      # Kubernetes-native trigger events
+      - alert: testCompassCrashLoopBackOff
+        expr: kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"} == 1
+        for: 1m
+        labels:
+          severity: critical
+          test_compass_event_type: CrashLoopBackOff
+          test_compass_trigger: crash_loop
+        annotations:
+          summary: 'CrashLoopBackOff: {{ $labels.namespace }}/{{ $labels.pod }}'
+          description: 'Container {{ $labels.container }} in pod {{ $labels.pod }} is crash-looping.'
+
+      - alert: testCompassOOMKilled
+        expr: kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+        for: 0m
+        labels:
+          severity: critical
+          test_compass_event_type: OOMKilled
+          test_compass_trigger: oom_kill
+        annotations:
+          summary: 'OOMKilled: {{ $labels.namespace }}/{{ $labels.pod }}'
+          description: 'Container {{ $labels.container }} in pod {{ $labels.pod }} was OOMKilled.'
+
+      - alert: testCompassImagePullBackOff
+        expr: kube_pod_container_status_waiting_reason{reason="ImagePullBackOff"} == 1
+        for: 1m
+        labels:
+          severity: warning
+          test_compass_event_type: ImagePullBackOff
+          test_compass_trigger: image_pull_failure
+        annotations:
+          summary: 'ImagePullBackOff: {{ $labels.namespace }}/{{ $labels.pod }}'
+          description: 'Container {{ $labels.container }} in pod {{ $labels.pod }} cannot pull its image.'
+
+      # --- Infra-level triggers ----------------------
+      - alert: testCompassHighCPUUtilization
+        expr: test_compass:node:cpu_utilization > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          test_compass_event_type: alert_fired
+          test_compass_trigger: high_cpu
+        annotations:
+          summary: 'High CPU on {{ $labels.instance }}'
+          description: '{{ $labels.instance }} CPU utilization is {{ $value | humanizePercentage }} for 5m.'
+
+      - alert: testCompassHighMemoryUtilization
+        expr: test_compass:node:memory_utilization > 0.9
+        for: 5m
+        labels:
+          severity: critical
+          test_compass_event_type: alert_fired
+          test_compass_trigger: high_memory
+        annotations:
+          summary: 'High memory on {{ $labels.instance }}'
+          description: '{{ $labels.instance }} memory utilization is {{ $value | humanizePercentage }} for 5m.'
+
+      - alert: testCompassHighDiskUtilization
+        expr: test_compass:node:disk_utilization > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          test_compass_event_type: alert_fired
+          test_compass_trigger: high_disk
+        annotations:
+          summary: 'Disk filling up on {{ $labels.instance }} ({{ $labels.mountpoint }})'
+          description: '{{ $labels.mountpoint }} on {{ $labels.instance }} is {{ $value | humanizePercentage }} full.'
+
+      # --- Synthetic / test-only rules -----------------------------------
+      - alert: testCompassSyntheticStormTrigger
+        expr: test_compass_test_storm_flag == 1
+        for: 0s
+        labels:
+          severity: warning
+          test_compass_event_type: alert_fired
+          test_compass_trigger: synthetic_storm_test
+        annotations:
+          summary: 'Synthetic storm-test alert for {{ $labels.service }}'
+          description: 'Fired because test_compass_test_storm_flag=1 — used to load-test the alert-storm handler.'
