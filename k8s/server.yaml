@@ -20,6 +20,8 @@ spec:
           # built from the repo root Dockerfile (compose "build: context: .")
           # build + push, then update this image reference (or set via `kustomize edit set image`)
           image: omarmohamed04/compass-server:latest
+          imagePullPolicy: Always
+
           env:
             - name: SERVICE_NAME
               value: compass

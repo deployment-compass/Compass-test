@@ -19,6 +19,7 @@ spec:
         - name: compass
           # built from ./compass Dockerfile (compose "build: context: ./compass")
           image: omarmohamed04/compass:latest
+          imagePullPolicy: Always
           env:
             - name: COMPASS_PROMETHEUS_URL
               value: http://prometheus:9090
@@ -30,6 +31,7 @@ spec:
               value: amqp://guest:guest@rabbitmq:5672/
           ports:
             - containerPort: 8000
+            
 
 
 ---
