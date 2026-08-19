@@ -39,7 +39,7 @@ services:
     volumes:
       - ./monitoring/alertmanager.yml:/etc/alertmanager.yml:ro
     command:
-      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --config.file=/etc/alertmanager.yml
     ports:
       - '9093:9093'
 

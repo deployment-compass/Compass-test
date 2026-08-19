@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: compass
+
+resources:
+  - namespace.yaml
+  - prometheus-rbac.yaml
+  - prometheus.yaml
+  - loki.yaml
+  - alertmanager.yaml
+  - server.yaml
+  - compass.yaml
+  - redis.yaml
+  - rabbitmq.yaml
+  - cadvisor-daemonset.yaml
+  - node-exporter-daemonset.yaml
+
+# Generates ConfigMaps straight from your existing config files -
+# point these paths at your real ./monitoring directory before building.
+configMapGenerator:
+  - name: prometheus-config
+    files:
+      - monitoring/prometheus/prometheus.yml
+      # add any other files that live under ./monitoring/prometheus/
+  - name: loki-config
+    files:
+      - local-config.yml=monitoring/loki/loki-config.yml
+      - rules.yml=monitoring/loki/rules.yml
+  - name: alertmanager-config
+    files:
+      - alertmanager.yml=monitoring/alertmanager.yml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
