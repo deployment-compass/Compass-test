@@ -20,6 +20,13 @@ spec:
       containers:
         - name: rabbitmq
           image: dhi.io/rabbitmq:4-debian-dev
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              value: guest
+            - name: RABBITMQ_DEFAULT_PASS
+              value: guest
+            - name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS
+              value: "-rabbit loopback_users []"
           ports:
             - containerPort: 5672
             - containerPort: 15672
