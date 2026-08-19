@@ -52,8 +52,8 @@ echo "  Interval: ${INTERVAL_SECONDS}s"
 echo "  Output:   ${OUTPUT_FILE}"
 echo "  Target:   ${API_URL}"
 
-# Ensure output file is empty/created
-> "${OUTPUT_FILE}"
+# Ensure output file exists without clearing existing contents
+touch "${OUTPUT_FILE}"
 
 END_TIME=$((SECONDS + DURATION_SECONDS))
 
@@ -61,7 +61,7 @@ while [ $SECONDS -lt $END_TIME ]; do
     echo "Collecting sample at $(date)..."
     
     # We use -s for silent, -f to fail on HTTP errors if desired (but omitting to see partial errors if any)
-    RESPONSE=$(curl -s "${API_URL}")
+    RESPONSE=$(curl -X 'POST'  "${API_URL}")
     
     # Append the raw JSON array or object as a single line JSONL
     if [ -n "$RESPONSE" ]; then
