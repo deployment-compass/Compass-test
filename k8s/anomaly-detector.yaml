@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: anomaly-detector
+  namespace: compass
+  labels:
+    app: anomaly-detector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: anomaly-detector
+  template:
+    metadata:
+      labels:
+        app: anomaly-detector
+    spec:
+      containers:
+        - name: anomaly-detector
+          # TODO: replace with your image after building and pushing
+          # e.g: docker build -t <your-dockerhub-user>/anomaly-detector:latest .
+          #      docker push <your-dockerhub-user>/anomaly-detector:latest
+          image: realshoy/anomaly-detector:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: RABBITMQ_URL
+              value: amqp://guest:guest@rabbitmq:5672/
+            - name: RABBITMQ_EXCHANGE
+              value: compass
+            - name: RABBITMQ_ROUTING_KEY
+              value: compass.ingest.normalized.anomly
+            - name: RABBITMQ_QUEUE
+              value: anomaly-detector
+            - name: MODEL_PATH
+              value: model/anomaly_model.pkl
+            - name: MODEL_CONFIG_PATH
+              value: model/anomaly_config.json
+            # Layer 1 thresholds
+            - name: L1_ERROR_RATE_THRESHOLD
+              value: "0.5"
+            - name: L1_P95_LATENCY_THRESHOLD
+              value: "2.0"
+            - name: L1_OOM_THRESHOLD
+              value: "0.0"
+            - name: L1_FATAL_THRESHOLD
+              value: "0.0"
+            # Layer 3 — leave empty until the LLM service is deployed
+            # - name: LLM_ESCALATION_URL
+            #   value: http://llm-service:8001/investigate
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: anomaly-detector
+  namespace: compass
+spec:
+  selector:
+    app: anomaly-detector
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP

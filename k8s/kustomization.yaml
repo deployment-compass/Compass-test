@@ -12,6 +12,7 @@ resources:
   - compass.yaml
   - redis.yaml
   - rabbitmq.yaml
+  - anomaly-detector.yaml
   - cadvisor-daemonset.yaml
   - node-exporter-daemonset.yaml
 
