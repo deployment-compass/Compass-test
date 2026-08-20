@@ -72,9 +72,9 @@ while [ $SECONDS -lt $END_TIME ]; do
     fi
     
     # Sleep until next interval unless we're out of time
-    if [ $((SECONDS + INTERVAL_SECONDS)) -lt $END_TIME ]; then
-        sleep $INTERVAL_SECONDS
-    fi
+    
+    sleep $INTERVAL_SECONDS
+    
 done
 
 echo "Collection complete! Data written to ${OUTPUT_FILE}."

@@ -29,6 +29,8 @@ spec:
               value: redis://redis:6379/0
             - name: COMPASS_RABBITMQ_URL
               value: amqp://guest:guest@rabbitmq:5672/
+            - name: dummyKey
+              value: dummyValue
           ports:
             - containerPort: 8000
             
