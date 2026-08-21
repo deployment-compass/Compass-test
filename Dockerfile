@@ -1,5 +1,5 @@
 # ---------- Build stage ----------
-FROM dhi.io/node:26-alpine-dev AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ RUN npm run build
 
 
 # ---------- Production stage ----------
-FROM dhi.io/node:26-alpine-dev AS production
+FROM node:20-alpine AS production
 
 WORKDIR /app
 

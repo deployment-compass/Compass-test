@@ -21,6 +21,8 @@ spec:
           image: omarmohamed04/compass:latest
           imagePullPolicy: Always
           env:
+            - name: PORT
+              value: "8000"
             - name: COMPASS_PROMETHEUS_URL
               value: http://prometheus:9090
             - name: COMPASS_LOKI_URL
