@@ -55,6 +55,9 @@ spec:
               value: "50"
             - name: LLM_TIMEOUT_SECONDS
               value: "300"
+            # Report-generator — routing key for publishing completed LLM responses
+            - name: REPORT_GENERATOR_ROUTING_KEY
+              value: "compass.report.generate"
             # Legacy fallback (unused when K8S_AGENT_CHAT_URL is set)
             # - name: LLM_ESCALATION_URL
             #   value: http://llm-service:8001/investigate
