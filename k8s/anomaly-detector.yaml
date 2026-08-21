@@ -46,7 +46,14 @@ spec:
               value: "0.0"
             - name: L1_FATAL_THRESHOLD
               value: "0.0"
-            # Layer 3 — leave empty until the LLM service is deployed
+            # Layer 3 — k8s-ai-agent chat (new) + Compass logs fetch
+            - name: K8S_AGENT_CHAT_URL
+              value: http://k8s-ai-agent.k8s-ai-agent.svc.cluster.local:8000/api/v1/chat
+            - name: COMPASS_LOGS_URL
+              value: http://server.compass.svc.cluster.local:3000/logs/recent
+            - name: COMPASS_LOGS_LIMIT
+              value: "50"
+            # Legacy fallback (unused when K8S_AGENT_CHAT_URL is set)
             # - name: LLM_ESCALATION_URL
             #   value: http://llm-service:8001/investigate
           livenessProbe:

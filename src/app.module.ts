@@ -4,9 +4,10 @@ import { AppService } from './app.service';
 import { SimulatorModule } from './simulator/simulator.module';
 import { MetricsModule } from './observability/metrics.module';
 import { CorrelationIdMiddleware } from './observability/correlation-id.middleware';
+import { LogsModule } from './logs/logs.module';
 
 @Module({
-  imports: [MetricsModule, SimulatorModule],
+  imports: [MetricsModule, SimulatorModule, LogsModule],
   controllers: [AppController],
   providers: [AppService],
 })

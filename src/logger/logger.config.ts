@@ -11,6 +11,7 @@
 import { WinstonModule, utilities as nestWinstonUtils } from 'nest-winston';
 import LokiTransport from 'winston-loki';
 import * as winston from 'winston';
+import { RingBufferTransport } from '../logs/ring-buffer.transport';
 
 const SERVICE_NAME = process.env.SERVICE_NAME ?? 'compass';
 const LOKI_URL = process.env.LOKI_URL ?? 'http://loki:3100';
@@ -45,6 +46,10 @@ export const winstonOptions: winston.LoggerOptions = {
       batching: true,
       interval: 5, // seconds — batch flush interval
     }),
+
+    // In-memory ring buffer — keeps the last 500 log entries for
+    // GET /logs/recent (consumed by the anomaly-detector on LLM escalation)
+    new RingBufferTransport(),
   ],
 };
 
